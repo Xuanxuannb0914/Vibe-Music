@@ -1,0 +1,116 @@
+<!doctype html>
+<html lang="zh-CN" data-theme="dark" data-glass="on" data-glow="on">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+  <meta name="color-scheme" content="dark light">
+  <meta http-equiv="Content-Security-Policy" content="
+    default-src 'self' aura:;
+    script-src 'self' aura:;
+    style-src 'self' aura: 'unsafe-inline';
+    img-src 'self' aura: data: blob: http: https:;
+    media-src 'self' aura: data: blob: http: https:;
+    font-src 'self' aura: data:;
+    connect-src 'self' aura: data: blob: http: https:;
+    object-src 'none';
+    base-uri 'none';
+  ">
+  <title>Aura · 音乐</title>
+
+  <link rel="stylesheet" href="styles/tokens.css">
+  <link rel="stylesheet" href="styles/base.css">
+  <link rel="stylesheet" href="styles/components.css">
+  <link rel="stylesheet" href="styles/views.css">
+</head>
+<body>
+  <!-- 环境光：由封面主色驱动的三团辉光 + 胶片颗粒，位于所有内容之下 -->
+  <div class="ambient" aria-hidden="true">
+    <div class="ambient__glow ambient__glow--a"></div>
+    <div class="ambient__glow ambient__glow--b"></div>
+    <div class="ambient__glow ambient__glow--c"></div>
+    <div class="ambient__grain"></div>
+  </div>
+
+  <div class="app-shell">
+    <!-- ---------- 顶部胶囊导航：悬浮于内容之上，全站唯一的顶部栏 ---------- -->
+    <header class="topnav drag-region" data-topnav>
+      <div class="topnav__pill">
+        <div class="topnav__brand">
+          <div class="topnav__mark" aria-hidden="true"></div>
+          <div class="topnav__wordmark">AURA</div>
+        </div>
+
+        <span class="topnav__sep" aria-hidden="true"></span>
+
+        <div class="topnav__hist">
+          <button type="button" class="icon-btn" data-act="nav-back" title="后退" aria-label="后退" disabled>
+            <span data-icon="chevron-left" data-icon-size="17"></span>
+          </button>
+          <button type="button" class="icon-btn" data-act="nav-forward" title="前进" aria-label="前进" disabled>
+            <span data-icon="chevron-right" data-icon-size="17"></span>
+          </button>
+        </div>
+
+        <nav class="topnav__nav" data-nav aria-label="主导航"></nav>
+
+        <span class="topnav__sep" aria-hidden="true"></span>
+
+        <div class="topnav__side">
+          <button type="button" class="nav-item" data-act="go" data-route="settings" data-section="source"
+                  title="数据源">
+            <span class="nav-item__icon" data-icon="plug" data-icon-size="16"></span>
+            <span class="nav-item__label" data-source-label>内置演示数据</span>
+          </button>
+          <button type="button" class="icon-btn" data-act="open-queue" title="播放队列" aria-label="播放队列">
+            <span data-icon="queue" data-icon-size="17"></span>
+          </button>
+          <button type="button" class="icon-btn" data-act="go" data-route="settings" title="设置" aria-label="设置">
+            <span data-icon="sliders" data-icon-size="17"></span>
+          </button>
+        </div>
+      </div>
+    </header>
+
+    <!-- ---------- 主区域：顶栏已并入胶囊，内容直接铺满 ---------- -->
+    <div class="main">
+      <main class="view-host" data-view-host tabindex="-1"></main>
+    </div>
+
+    <!-- ---------- 播放条 ---------- -->
+    <footer class="playerbar glass" data-playerbar></footer>
+  </div>
+
+  <!-- 静态图标占位（data-icon）由 app.js 启动时统一填充，icons.js 是唯一图标来源 -->
+
+  <!-- 基础层：工具函数是其它所有模块的依赖，必须最先加载 -->
+  <script src="js/util.js"></script>
+  <script src="js/icons.js"></script>
+  <script src="js/color.js"></script>
+  <script src="js/store.js"></script>
+
+  <!-- 数据层：内置演示数据 + 双通道适配器 + 门面 -->
+  <script src="js/mock.js"></script>
+  <script src="js/api/mock-adapter.js"></script>
+  <script src="js/api/qq-adapter.js"></script>
+  <script src="js/api/index.js"></script>
+
+  <!-- 表现与播放层 -->
+  <script src="js/theme.js"></script>
+  <script src="js/lyrics.js"></script>
+  <script src="js/audio.js"></script>
+  <script src="js/visualizer.js"></script>
+  <script src="js/player.js"></script>
+  <script src="js/ui.js"></script>
+
+  <!-- 视图层 -->
+  <script src="js/views/home.js"></script>
+  <script src="js/views/library.js"></script>
+  <script src="js/views/search.js"></script>
+  <script src="js/views/nowplaying.js"></script>
+  <script src="js/views/settings.js"></script>
+  <script src="js/views/detail.js"></script>
+
+  <!-- 外壳与引导：最后加载，自身负责启动 -->
+  <script src="js/app.js"></script>
+</body>
+</html>

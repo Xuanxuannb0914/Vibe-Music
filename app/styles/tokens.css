@@ -1,0 +1,219 @@
+/* ============================================================================
+   Aura · Design Tokens
+   ----------------------------------------------------------------------------
+   设计契约的可执行形态。所有视图只允许引用本文件的变量，
+   不得自行发明颜色 / 字号 / 圆角 / 间距。
+
+   美学方向：Liquid Glass · Editorial
+     - 环境光：背景由当前封面主色驱动，形成大面积柔和辉光（不是纯色平铺）
+     - 玻璃拟态：分层半透明 + backdrop-filter，克制使用，不做满屏毛玻璃
+     - 排版：SF Pro（系统原生，Apple 审美的正确选择）承担 UI，
+             New York / 宋体承担编辑感标题，形成衬线 vs 无衬线的强对比
+     - 强调色：始终只有一个，来自封面提取或用户指定，绝不平铺多色
+   ========================================================================= */
+
+:root {
+  /* ---------- 排版 ---------- */
+  --font-ui: -apple-system, BlinkMacSystemFont, "SF Pro Text", "SF Pro Display",
+    "PingFang SC", "Hiragino Sans GB", "Microsoft YaHei", system-ui, sans-serif;
+  --font-display: "New York", "SF Pro Display", -apple-system, "Songti SC",
+    "Source Han Serif SC", "Noto Serif CJK SC", Georgia, serif;
+  --font-mono: "SF Mono", ui-monospace, "JetBrains Mono", Menlo, Consolas, monospace;
+
+  /* 全部乘以 --font-scale，使「字号缩放」设置项能整体生效 */
+  --text-2xs: calc(11px * var(--font-scale));
+  --text-xs: calc(12px * var(--font-scale));
+  --text-sm: calc(13px * var(--font-scale));
+  --text-base: calc(15px * var(--font-scale));
+  --text-md: calc(17px * var(--font-scale));
+  --text-lg: calc(20px * var(--font-scale));
+  --text-xl: calc(24px * var(--font-scale));
+  --text-2xl: calc(32px * var(--font-scale));
+  --text-3xl: calc(44px * var(--font-scale));
+  --text-4xl: calc(60px * var(--font-scale));
+
+  /* ---------- 间距（4px 基准） ---------- */
+  --sp-1: 4px;
+  --sp-2: 8px;
+  --sp-3: 12px;
+  --sp-4: 16px;
+  --sp-5: 20px;
+  --sp-6: 24px;
+  --sp-8: 32px;
+  --sp-10: 40px;
+  --sp-12: 48px;
+  --sp-16: 64px;
+
+  /* ---------- 圆角（受 --radius-scale 缩放，设置面板可调） ---------- */
+  --radius-scale: 1;
+  --r-xs: calc(6px * var(--radius-scale));
+  --r-sm: calc(10px * var(--radius-scale));
+  --r-md: calc(14px * var(--radius-scale));
+  --r-lg: calc(20px * var(--radius-scale));
+  --r-xl: calc(28px * var(--radius-scale));
+  --r-2xl: calc(38px * var(--radius-scale));
+  --r-full: 999px;
+
+  /* ---------- 动效 ---------- */
+  --ease-out: cubic-bezier(0.22, 1, 0.36, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.4, 0.5, 1);
+  --dur-1: 120ms;
+  --dur-2: 200ms;
+  --dur-3: 320ms;
+  --dur-4: 520ms;
+
+  /* ---------- 字体缩放（设置面板可调） ---------- */
+  --font-scale: 1;
+
+  /* ---------- 布局 ---------- */
+  --playerbar-h: 92px;
+  --topnav-h: 52px;
+  /* 胶囊底边到内容顶端的距离：内容区顶部留白与吸顶元素的 top 共用它 */
+  --topnav-offset: calc(var(--titlebar-safe) - 22px + var(--topnav-h) + var(--sp-4));
+  --titlebar-safe: 52px; /* macOS 交通灯预留高度 */
+  --content-max: 1440px;
+
+  /* ---------- 玻璃与氛围（设置面板可调） ---------- */
+  --glass-blur: 26px;
+  --glass-saturate: 165%;
+  --glass-bg: rgba(255, 255, 255, 0.055);
+  --glass-bg-strong: rgba(255, 255, 255, 0.085);
+  --glass-border: rgba(255, 255, 255, 0.1);
+  --glass-border-strong: rgba(255, 255, 255, 0.18);
+
+  /* 环境辉光强度 0~1，由封面主色驱动 */
+  --glow-strength: 0.85;
+  /* 胶片颗粒强度 0~1 */
+  --grain-strength: 0.035;
+
+  /* ---------- 行密度（设置面板可调：compact / cozy / spacious） ---------- */
+  --row-h: 54px;
+  --card-gap: var(--sp-5);
+
+  /* ---------- 强调色（运行时由 theme.js 覆盖） ---------- */
+  --accent: #ff375f;
+  --accent-rgb: 255 55 95;
+  --accent-contrast: #ffffff;
+
+  /* ---------- 层级 ---------- */
+  --z-content: 1;
+  --z-playerbar: 40;
+  --z-topbar: 60;
+  --z-overlay: 200;
+  --z-modal: 300;
+  --z-toast: 400;
+  --z-menu: 500;
+}
+
+/* ============================================================================
+   深色主题（默认）—— 夜间聆听的主场景
+   ========================================================================= */
+:root,
+[data-theme="dark"] {
+  color-scheme: dark;
+
+  --bg-base: #08080b;
+  --bg-deep: #050507;
+  --bg-elevated: #16161c;
+  --bg-elevated-2: #1e1e26;
+
+  --surface: rgba(255, 255, 255, 0.05);
+  --surface-hover: rgba(255, 255, 255, 0.09);
+  --surface-active: rgba(255, 255, 255, 0.13);
+  --surface-sunken: rgba(0, 0, 0, 0.32);
+
+  --border: rgba(255, 255, 255, 0.09);
+  --border-strong: rgba(255, 255, 255, 0.16);
+
+  --text: #f5f5f7;
+  --text-sub: #a3a3ad;
+  --text-tertiary: #6b6b75;
+  --text-inverse: #0a0a0d;
+
+  --success: #32d74b;
+  --warning: #ffd60a;
+  --danger: #ff453a;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.4);
+  --shadow-md: 0 6px 22px rgba(0, 0, 0, 0.42);
+  --shadow-lg: 0 22px 60px rgba(0, 0, 0, 0.55);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.06);
+
+  --scrollbar-thumb: rgba(255, 255, 255, 0.16);
+  --scrollbar-thumb-hover: rgba(255, 255, 255, 0.28);
+
+  --skeleton-a: rgba(255, 255, 255, 0.05);
+  --skeleton-b: rgba(255, 255, 255, 0.11);
+
+  /* 首页磁带架：外壳塑料、内腔阴影、卷盘金属 */
+  --tape-shell: #26262f;
+  --tape-deck: rgba(0, 0, 0, 0.45);
+  --tape-reel: rgba(255, 255, 255, 0.55);
+}
+
+/* ============================================================================
+   浅色主题 —— 日间浏览，纸质编辑感
+   ========================================================================= */
+[data-theme="light"] {
+  color-scheme: light;
+
+  --bg-base: #f4f4f6;
+  --bg-deep: #e9e9ee;
+  --bg-elevated: #ffffff;
+  --bg-elevated-2: #fbfbfd;
+
+  --surface: rgba(0, 0, 0, 0.035);
+  --surface-hover: rgba(0, 0, 0, 0.06);
+  --surface-active: rgba(0, 0, 0, 0.1);
+  --surface-sunken: rgba(0, 0, 0, 0.045);
+
+  --border: rgba(0, 0, 0, 0.09);
+  --border-strong: rgba(0, 0, 0, 0.16);
+
+  --text: #1d1d1f;
+  --text-sub: #6e6e73;
+  --text-tertiary: #96969c;
+  --text-inverse: #ffffff;
+
+  --glass-bg: rgba(255, 255, 255, 0.62);
+  --glass-bg-strong: rgba(255, 255, 255, 0.78);
+  --glass-border: rgba(0, 0, 0, 0.07);
+  --glass-border-strong: rgba(0, 0, 0, 0.13);
+
+  --success: #248a3d;
+  --warning: #b25000;
+  --danger: #d70015;
+
+  --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.06);
+  --shadow-md: 0 6px 20px rgba(0, 0, 0, 0.09);
+  --shadow-lg: 0 22px 56px rgba(0, 0, 0, 0.14);
+  --shadow-inset: inset 0 1px 0 rgba(255, 255, 255, 0.7);
+
+  --scrollbar-thumb: rgba(0, 0, 0, 0.16);
+  --scrollbar-thumb-hover: rgba(0, 0, 0, 0.3);
+
+  --skeleton-a: rgba(0, 0, 0, 0.045);
+  --skeleton-b: rgba(0, 0, 0, 0.09);
+
+  /* 首页磁带架：浅色下外壳改为浅灰塑料，卷盘转为深色金属 */
+  --tape-shell: #d8d8e0;
+  --tape-deck: rgba(0, 0, 0, 0.07);
+  --tape-reel: rgba(0, 0, 0, 0.42);
+}
+
+/* 浅色下玻璃底更实，保证文字对比度 */
+[data-theme="light"] .glass {
+  --glass-bg: rgba(255, 255, 255, 0.66);
+}
+
+/* 关闭玻璃效果时的降级：改用不透明面板，避免半透明叠半透明导致可读性崩塌 */
+[data-glass="off"] {
+  --glass-blur: 0px;
+}
+[data-glass="off"] .glass,
+[data-glass="off"] .glass-strong {
+  background: var(--bg-elevated);
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}

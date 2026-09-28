@@ -1,0 +1,52 @@
+{
+  "name": "aura-music",
+  "productName": "Aura",
+  "version": "0.1.0",
+  "description": "Aura — 高自由度、高级美感的桌面音乐播放器。封面主色驱动氛围光，支持 QQ 音乐数据源接入。",
+  "private": true,
+  "main": "electron/main.js",
+  "author": "Aura",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev",
+    "serve": "node dev-server.js",
+    "dist": "electron-builder",
+    "dist:mac": "electron-builder --mac",
+    "dist:win": "electron-builder --win"
+  },
+  "devDependencies": {
+    "electron": "^33.0.0",
+    "electron-builder": "^25.0.0"
+  },
+  "build": {
+    "appId": "com.aura.music",
+    "productName": "Aura",
+    "directories": {
+      "output": "release"
+    },
+    "files": [
+      "electron/**/*",
+      "app/**/*",
+      "package.json"
+    ],
+    "mac": {
+      "category": "public.app-category.music",
+      "target": [
+        "dmg",
+        "zip"
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis"
+      ]
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Audio"
+    }
+  }
+}

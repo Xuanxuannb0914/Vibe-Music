@@ -1,0 +1,10 @@
+node_modules/
+release/
+dist/
+.DS_Store
+*.log
+npm-debug.log*
+.electron-builder-cache/
+
+# Trae 打包产物，可由源文件重新生成
+.trae-html-share-packages/
