@@ -22,7 +22,7 @@
   var config = {
     apiBase: 'http://localhost:3300',
     cookie: '',
-    quality: '320',
+    quality: '128',
   };
 
   function setConfig(next) {
@@ -110,6 +110,23 @@
   }
 
   /* ------------------------------------------------------------------ *
+   * 曲目 id
+   *
+   * QQ 的歌词接口只认数字 songid，而列表接口同时给出 mid 与 songid。
+   * 上层只把 track.id 传回来，所以把 songid 一起编进 id 里带着走：
+   * qq_tr_{mid}~{songid}。mid 是纯字母数字，用 ~ 分隔不会歧义。
+   * ------------------------------------------------------------------ */
+
+  function encodeTrackId(mid, songId) {
+    return 'qq_tr_' + mid + (songId ? '~' + songId : '');
+  }
+
+  function decodeTrackId(trackId) {
+    var parts = String(trackId).replace(/^qq_tr_/, '').split('~');
+    return { mid: parts[0], songId: parts[1] || '' };
+  }
+
+  /* ------------------------------------------------------------------ *
    * 资源地址拼接
    * ------------------------------------------------------------------ */
 
@@ -168,9 +185,10 @@
     var albumRaw = pick(raw, ['album', 'albumInfo'], null);
     var album = normalizeAlbum(albumRaw, artist);
     var interval = Number(pick(raw, ['interval', 'duration', 'song_time'], 0)) || 0;
+    var songId = pick(raw, ['id', 'song_id'], '');
 
     return {
-      id: 'qq_tr_' + (mid || pick(raw, ['id', 'song_id'], 'unknown')),
+      id: encodeTrackId(mid || String(songId || 'unknown'), mid ? songId : ''),
       mid: mid,
       title: pick(raw, ['name', 'title', 'songname'], '未知曲目'),
       albumId: album ? album.id : null,
@@ -283,10 +301,11 @@
       return adapter.search('').then(function (r) { return r.tracks; });
     },
 
+    /** GET {apiBase}/recommend/album —— 首页「专辑」货架 */
     getAlbums: function () {
-      return request('/recommend/playlist').then(function (res) {
+      return request('/recommend/album').then(function (res) {
         var list = firstArray(pick(res, ['data.list', 'data', 'list'], []));
-        return list.map(function (item) { return normalizePlaylist(item); }).filter(Boolean);
+        return list.map(function (item) { return normalizeAlbum(item); }).filter(Boolean);
       });
     },
 
@@ -367,10 +386,10 @@
       });
     },
 
-    /** GET {apiBase}/lyric?id={songMid} */
+    /** GET {apiBase}/lyric?id={songMid}&songid={songId} —— QQ 歌词接口必须带数字 songid */
     getLyrics: function (trackId) {
-      var mid = String(trackId).replace(/^qq_tr_/, '');
-      return request('/lyric', { id: mid }).then(function (res) {
+      var ref = decodeTrackId(trackId);
+      return request('/lyric', { id: ref.mid, songid: ref.songId }).then(function (res) {
         var data = pick(res, ['data', 'response.data'], res);
         var lrc = pick(data, ['lyric', 'lrc', 'lyric_txt'], '');
         var trans = pick(data, ['trans', 'translation', 'trans_txt'], '');
@@ -414,7 +433,7 @@
      * 返回可播放的音频直链。第三方服务的 url 通常带有效期，因此不做本地缓存。
      */
     resolveStreamUrl: function (trackId) {
-      var mid = String(trackId).replace(/^qq_tr_/, '');
+      var mid = decodeTrackId(trackId).mid;
       return request('/song/urls', { id: mid, quality: config.quality }).then(function (res) {
         var data = pick(res, ['data', 'response.data'], res);
         var entry = data && data[mid] != null ? data[mid] : data;
@@ -422,6 +441,9 @@
 
         var url = pick(entry, ['url', 'purl', 'play_url'], '') || pick(data, ['url'], '');
         if (!url) {
+          if (pick(entry, ['needLogin'], false) || pick(data, ['needLogin'], false)) {
+            throw new Error('该曲目需要登录 QQ 音乐才能播放，请在设置里粘贴登录 Cookie');
+          }
           throw new Error('该曲目没有可用的播放地址（可能受版权限制，或登录 Cookie 已失效）');
         }
         return {
@@ -430,6 +452,27 @@
           lossless: String(config.quality) === 'flac',
           synthesized: false,
         };
+      });
+    },
+
+    /* ---------- 扫码登录 ----------
+     * 二维码种子（qrsig）只存在服务端内存里，前端拿到的是一张 PNG 和会话 id，
+     * 轮询到 success 时服务端把拼好的 Cookie 回传，这里再交给上层写进配置。
+     */
+
+    /** GET {apiBase}/login/qr —— 取一张登录二维码 */
+    loginQr: function () {
+      return request('/login/qr', {}, { timeout: 10000 }).then(function (res) {
+        var data = pick(res, ['data'], res);
+        if (!data || !data.image) throw new Error('接口未返回二维码，请确认服务已更新到最新版本');
+        return data;
+      });
+    },
+
+    /** GET {apiBase}/login/poll?session= —— 轮询扫码状态 */
+    loginPoll: function (session) {
+      return request('/login/poll', { session: session }, { timeout: 10000 }).then(function (res) {
+        return pick(res, ['data'], res) || { status: 'pending' };
       });
     },
 

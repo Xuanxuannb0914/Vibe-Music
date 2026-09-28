@@ -439,7 +439,10 @@
 
   function closeOverlay() {
     var top = overlayStack.pop();
-    if (top) top.remove();
+    if (!top) return;
+    // onClose 是调用方清理副作用（定时器、外部引用）的唯一时机，必须先于移除节点
+    if (typeof top.onClose === 'function') top.onClose();
+    top.el.remove();
   }
 
   function closeAllOverlays() {
@@ -470,7 +473,7 @@
     });
 
     document.body.appendChild(overlay);
-    overlayStack.push(overlay);
+    overlayStack.push({ el: overlay, onClose: opts.onClose });
     if (typeof opts.onMount === 'function') opts.onMount(modal);
     return modal;
   }

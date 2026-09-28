@@ -11,7 +11,7 @@
 
   var state = {
     source: 'mock',
-    qq: { apiBase: 'http://localhost:3300', cookie: '', quality: '320' },
+    qq: { apiBase: 'http://localhost:3300', cookie: '', quality: '128' },
     ready: false,
   };
 
@@ -121,6 +121,18 @@
     testConnection: function () {
       syncAdapterConfig();
       return activeAdapter().testConnection();
+    },
+
+    /* ---------- QQ 音乐扫码登录（只对 QQ 数据源有意义） ---------- */
+
+    loginQr: function () {
+      syncAdapterConfig();
+      return Aura.apiQqAdapter.loginQr();
+    },
+
+    loginPoll: function (session) {
+      syncAdapterConfig();
+      return Aura.apiQqAdapter.loginPoll(session);
     },
 
     /* ---------- 领域方法：全部转发给当前适配器 ---------- */

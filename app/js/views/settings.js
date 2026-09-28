@@ -309,6 +309,21 @@
     '</div>';
   }
 
+  function accountRow(qq) {
+    var logged = !!(qq && qq.cookie);
+    return row('账号', '扫码登录后可播放付费曲目，并解锁 320 kbps 与无损音质。',
+      '<div class="qq-account">' +
+        '<span class="qq-account__state' + (logged ? ' is-on' : '') + '" data-qq-account>' +
+          (logged ? '已保存登录信息' : '未登录') + '</span>' +
+        '<button type="button" class="btn btn--primary" data-act="qq-login">' +
+          Aura.icon('user', { size: 15 }) + '<span>' + (logged ? '重新登录' : '扫码登录') + '</span></button>' +
+        (logged
+          ? '<button type="button" class="btn btn--ghost" data-act="qq-logout">' +
+              Aura.icon('x', { size: 15 }) + '<span>退出</span></button>'
+          : '') +
+      '</div>');
+  }
+
   function sourceSection() {
     var source = Aura.api.getSource();
     var qq = Aura.api.getQqConfig();
@@ -323,25 +338,26 @@
         '</div>') +
       row('连接状态', null, statusLine(), true) +
       (source === 'qq'
-        ? row('接口地址', '第三方 QQ 音乐 API 服务，例如 http://localhost:3300',
+        ? row('接口地址', '本机 QQ 音乐接口服务，先运行 npm run qq-server',
             '<input type="text" class="input input--mono" style="width:260px" placeholder="http://localhost:3300"' +
               ' value="' + ui.esc(qq.apiBase) + '" data-input="qq-field" data-field="apiBase" aria-label="接口地址">') +
-          row('登录 Cookie', '包含 uin 与 qqmusic_key。仅保存在本机，不会上传到任何第三方。',
-            '<textarea class="input input--mono" rows="3" style="width:360px" placeholder="uin=…; qqmusic_key=…"' +
-              ' data-input="qq-field" data-field="cookie" aria-label="登录 Cookie">' + ui.esc(qq.cookie) + '</textarea>', true) +
-          row('音质', '取决于账号权限与音源是否提供。',
+          accountRow(qq) +
+          row('音质', '免登录只有 128 kbps 可用，320 / 无损需登录会员账号。',
             selectCtl('qq.quality', qq.quality, [
               { value: '128', label: '128 kbps' },
               { value: '320', label: '320 kbps' },
               { value: 'flac', label: 'FLAC 无损' },
             ])) +
+          row('登录 Cookie', '扫码失败时可手动粘贴。包含 uin 与 qqmusic_key，仅保存在本机，不会上传到任何第三方。',
+            '<textarea class="input input--mono" rows="3" style="width:360px" placeholder="uin=…; qqmusic_key=…"' +
+              ' data-input="qq-field" data-field="cookie" aria-label="登录 Cookie">' + ui.esc(qq.cookie) + '</textarea>', true) +
           row('连通性', '向接口地址发起一次健康检查。',
             '<button type="button" class="btn btn--secondary" data-act="test-connection">' +
               Aura.icon('plug', { size: 15 }) + '<span>测试连接</span></button>')
         : '') +
       (source === 'qq'
         ? '<div style="margin-top:var(--sp-4)">' + ui.notice('shield',
-            '本项目不自带任何音乐版权内容。接入 QQ 音乐需自行部署第三方 API 服务并遵守其服务条款，' +
+            '本项目不自带任何音乐版权内容。接入 QQ 音乐需遵守其服务条款，' +
             '仅在个人学习与本地播放场景使用。', 'warning') + '</div>'
         : '')
     );
@@ -511,6 +527,141 @@
           ui.esc(err.message) + '</span>';
       }
       ui.toast(err.message, 'danger');
+    });
+  });
+
+  /* ------------------------------------------------------------------ *
+   * QQ 音乐扫码登录
+   *
+   * 二维码由本地服务生成，qrsig 不出服务端；这里只负责「显示图片 → 轮询状态 →
+   * 拿到 Cookie 写进配置」。定时器挂在弹窗上，关掉弹窗即刻停止轮询。
+   * ------------------------------------------------------------------ */
+
+  var LOGIN_POLL_MS = 2000;
+
+  Aura.ui.action('qq-login', function () {
+    var pollTimer = null;
+    var session = null;
+    var failures = 0;
+
+    function stopPoll() {
+      if (pollTimer) {
+        clearInterval(pollTimer);
+        pollTimer = null;
+      }
+    }
+
+    ui.openModal({
+      title: '登录 QQ 音乐',
+      size: 'min(360px, 100%)',
+      body:
+        '<div class="qq-login">' +
+          '<div class="qq-login__stage">' +
+            '<img class="qq-login__qr" alt="QQ 音乐登录二维码" hidden>' +
+            '<div class="qq-login__placeholder"><span class="spinner"></span></div>' +
+            '<div class="qq-login__retry" hidden>' +
+              '<button type="button" class="btn btn--secondary" data-login-retry>' +
+                Aura.icon('refresh', { size: 15 }) + '<span>刷新二维码</span></button>' +
+            '</div>' +
+          '</div>' +
+          '<div class="qq-login__status" data-login-status>正在获取二维码…</div>' +
+          '<div class="qq-login__hint">用手机 QQ「扫一扫」，并在手机上点击确认</div>' +
+        '</div>',
+      onMount: function (node) {
+        var qr = node.querySelector('.qq-login__qr');
+        var placeholder = node.querySelector('.qq-login__placeholder');
+        var retry = node.querySelector('.qq-login__retry');
+        var status = node.querySelector('[data-login-status]');
+
+        function setStatus(text) {
+          status.textContent = text;
+        }
+
+        function showQr(src) {
+          qr.src = src;
+          qr.hidden = false;
+          placeholder.hidden = true;
+          retry.hidden = true;
+        }
+
+        function showRetry(text) {
+          stopPoll();
+          placeholder.hidden = true;
+          retry.hidden = false;
+          setStatus(text);
+        }
+
+        function loadQr() {
+          Aura.api.loginQr().then(function (data) {
+            session = data.session;
+            showQr(data.image);
+            setStatus('请用手机 QQ 扫描二维码');
+            startPoll();
+          }).catch(function (err) {
+            showRetry(err.message);
+          });
+        }
+
+        function startPoll() {
+          stopPoll();
+          failures = 0;
+          pollTimer = setInterval(function () {
+            Aura.api.loginPoll(session).then(function (data) {
+              failures = 0;
+              switch (data.status) {
+                case 'success':
+                  stopPoll();
+                  Aura.api.setQqConfig({ cookie: data.cookie || '' }).then(function () {
+                    ui.closeOverlay();
+                    paintPanel();
+                    ui.toast(data.nickname ? '登录成功，欢迎 ' + data.nickname : '登录成功', 'success');
+                  });
+                  break;
+                case 'scanned':
+                  setStatus(data.message || '已扫描，请在手机上确认');
+                  break;
+                case 'expired':
+                case 'invalid':
+                case 'failed':
+                  showRetry(data.message || '二维码已失效，请刷新');
+                  break;
+                default:
+                  setStatus(data.message || '请用手机 QQ 扫描二维码');
+              }
+            }).catch(function (err) {
+              failures += 1;
+              if (failures >= 3) showRetry('无法连接登录服务：' + err.message);
+              else setStatus('网络波动，正在重试…');
+            });
+          }, LOGIN_POLL_MS);
+        }
+
+        retry.querySelector('[data-login-retry]').addEventListener('click', function () {
+          qr.hidden = true;
+          retry.hidden = true;
+          placeholder.hidden = false;
+          setStatus('正在获取二维码…');
+          loadQr();
+        });
+
+        loadQr();
+      },
+      onClose: stopPoll,
+    });
+  });
+
+  Aura.ui.action('qq-logout', function () {
+    ui.confirm({
+      title: '退出 QQ 音乐登录',
+      desc: '将清除本机保存的登录 Cookie。清除后仍可播放非付费曲目。',
+      confirmText: '退出登录',
+      danger: true,
+      onConfirm: function () {
+        Aura.api.setQqConfig({ cookie: '' }).then(function () {
+          paintPanel();
+          ui.toast('已退出 QQ 音乐登录', 'success');
+        });
+      },
     });
   });
 

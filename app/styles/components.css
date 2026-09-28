@@ -876,6 +876,81 @@ textarea.input {
 }
 
 /* ------------------------------------------------------------------ *
+   QQ 音乐登录
+ * ------------------------------------------------------------------ */
+
+.qq-account {
+  display: flex;
+  align-items: center;
+  gap: var(--sp-3);
+}
+
+.qq-account__state {
+  font-size: var(--text-sm);
+  color: var(--text-sub);
+}
+
+.qq-account__state.is-on {
+  color: var(--accent);
+}
+
+.qq-login {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: var(--sp-4);
+  padding: var(--sp-2) 0;
+}
+
+.qq-login__stage {
+  position: relative;
+  display: grid;
+  place-items: center;
+  width: 208px;
+  height: 208px;
+  border-radius: var(--r-lg);
+  background: #fff;
+  border: 1px solid var(--border);
+  overflow: hidden;
+}
+
+.qq-login__qr {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+}
+
+.qq-login__placeholder,
+.qq-login__retry {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  background: var(--surface-sunken);
+}
+
+/* 作者样式里的 display 会盖过浏览器默认的 [hidden]{display:none}，这里显式补回 */
+.qq-login__placeholder[hidden],
+.qq-login__retry[hidden],
+.qq-login__qr[hidden] {
+  display: none;
+}
+
+.qq-login__status {
+  font-size: var(--text-sm);
+  color: var(--text);
+  text-align: center;
+  min-height: 1.4em;
+}
+
+.qq-login__hint {
+  font-size: var(--text-xs);
+  color: var(--text-sub);
+  text-align: center;
+  line-height: 1.6;
+}
+
+/* ------------------------------------------------------------------ *
    轻提示
  * ------------------------------------------------------------------ */
 

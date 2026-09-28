@@ -84,10 +84,10 @@ const DEFAULT_CONFIG = {
     /** 登录态 Cookie（uin + qqmusic_key 等），仅保存在本机 userData 中 */
     cookie: '',
     /** 音质：128 | 320 | flac */
-    quality: '320',
+    quality: '128',
   },
   /** 允许放行 CORS 的音频/接口域名（用于频谱分析读取真实音频数据） */
-  corsAllowHosts: ['qq.com', 'qqmusic.qq.com', 'stream.qqmusic.qq.com'],
+  corsAllowHosts: ['qq.com', 'qqmusic.qq.com', 'stream.qqmusic.qq.com', 'tc.qq.com'],
 };
 
 function readJSON(file, fallback) {
